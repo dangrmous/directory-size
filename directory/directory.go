@@ -8,6 +8,7 @@ import (
 
 // GetDirectorySize calculates the total IntegerVal of a directory in bytes.
 // If recursive is false, it only calculates the IntegerVal of the files in the top-level directory.
+
 func GetDirectorySize(fs osfilesystem.OSFileSystem, dir string, recursive bool) (total int64, err error) {
 	var size int64
 
