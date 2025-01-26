@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/dangrmous/directory-Size/directory"
-	"github.com/dangrmous/directory-Size/format"
-	"github.com/dangrmous/directory-Size/osfilesystem"
+	"github.com/dangrmous/directory-size/directory"
+	"github.com/dangrmous/directory-size/format"
+	"github.com/dangrmous/directory-size/osfilesystem"
 	"log"
 	"os"
 	"strings"
@@ -15,7 +15,7 @@ func main() {
 	isRecursive := false
 	isHuman := false
 
-	osFileSystem := osfilesystem.OSFileSystem{}
+	osf := osfilesystem.OSFileSystem{}
 
 	// Check if the user provided arguments
 	if len(os.Args) < 2 {
@@ -50,7 +50,7 @@ func main() {
 		}
 
 		// Get the size of the directory
-		dirSize, err := directory.GetDirectorySize(osFileSystem, dir, isRecursive)
+		dirSize, err := directory.GetDirectorySize(osf, dir, isRecursive)
 		if err != nil {
 			log.Printf("Error getting size for directory '%s': %v", dir, err)
 			continue

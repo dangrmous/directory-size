@@ -1,7 +1,7 @@
 package directory
 
 import (
-	"github.com/dangrmous/directory-Size/osfilesystem"
+	"github.com/dangrmous/directory-size/osfilesystem"
 	"os"
 	"path/filepath"
 )
