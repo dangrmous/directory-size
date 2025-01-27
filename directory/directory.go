@@ -3,18 +3,17 @@ package directory
 import (
 	"github.com/dangrmous/directory-size/osfilesystem"
 	"os"
-	"path/filepath"
 )
 
 // GetDirectorySize calculates the total IntegerVal of a directory in bytes.
 // If recursive is false, it only calculates the IntegerVal of the files in the top-level directory.
 
-func GetDirectorySize(fs osfilesystem.OSFileSystem, dir string, recursive bool) (total int64, err error) {
+func GetDirectorySize(fs osfilesystem.FileSystem, dir string, recursive bool) (total int64, err error) {
 	var size int64
 
 	if recursive {
 		// Calculate IntegerVal recursively
-		err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		err = fs.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -31,7 +30,7 @@ func GetDirectorySize(fs osfilesystem.OSFileSystem, dir string, recursive bool) 
 		}
 	} else {
 		// Only calculate IntegerVal of top-level files (non-recursive)
-		entries, err := os.ReadDir(dir)
+		entries, err := fs.ReadDir(dir)
 		if err != nil {
 			return 0, err
 		}

@@ -5,6 +5,12 @@ import (
 	"path/filepath"
 )
 
+// FileSystem defines the interface implemented by OSFileSystem to allow mocking.
+type FileSystem interface {
+	ReadDir(dirname string) ([]os.DirEntry, error)
+	Walk(root string, fn filepath.WalkFunc) error
+}
+
 // OSFileSystem provides a real implementation of FileSystem using os and filepath packages.
 type OSFileSystem struct{}
 

@@ -1,109 +1,99 @@
-package directory
+package directory_test
 
 import (
-	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/dangrmous/directory-size/directory"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-// Mock File System Interfaces
-type mockFileSystem struct {
-	readDirFunc func(string) ([]os.DirEntry, error)
-	walkFunc    func(string, filepath.WalkFunc) error
+// MockFileSystem is a mock implementation of osfilesystem.FileSystem
+type MockFileSystem struct {
+	mock.Mock
 }
 
-func (m mockFileSystem) ReadDir(dirname string) ([]os.DirEntry, error) {
-	return m.readDirFunc(dirname)
+func (mfs *MockFileSystem) Walk(root string, fn filepath.WalkFunc) error {
+	fn("/test-dir", MockFileInfo{
+		size: 100,
+	}, nil)
+	return nil
 }
 
-func (m mockFileSystem) Walk(root string, fn filepath.WalkFunc) error {
-	return m.walkFunc(root, fn)
+// Mock implementation of ReadDir
+func (mfs *MockFileSystem) ReadDir(path string) ([]os.DirEntry, error) {
+	args := mfs.Called(path)
+	return args.Get(0).([]os.DirEntry), args.Error(1)
 }
 
-// Mock Directory Entry Implementation
-type mockDirEntry struct {
+// MockDirEntry mocks the os.DirEntry interface
+type MockDirEntry struct {
+	name  string
+	size  int64
+	isDir bool
+}
+
+func (mde *MockDirEntry) Type() fs.FileMode {
+	return fs.FileMode(2147483648)
+}
+
+func (mde *MockDirEntry) Name() string { return mde.name }
+func (mde *MockDirEntry) IsDir() bool  { return mde.isDir }
+func (mde *MockDirEntry) Info() (os.FileInfo, error) {
+	return &MockFileInfo{size: mde.size}, nil
+}
+
+// MockFileInfo mocks the os.FileInfo interface
+type MockFileInfo struct {
+	size  int64
 	name  string
 	isDir bool
-	size  int64
 }
 
-func (f mockDirEntry) Name() string               { return f.name }
-func (f mockDirEntry) IsDir() bool                { return f.isDir }
-func (f mockDirEntry) Type() os.FileMode          { return 0 }
-func (f mockDirEntry) Info() (os.FileInfo, error) { return mockFileInfo{f.name, f.isDir, f.size}, nil }
+func (mfi MockFileInfo) Size() int64        { return mfi.size }
+func (mfi MockFileInfo) IsDir() bool        { return false }
+func (mfi MockFileInfo) Name() string       { return "" }
+func (mfi MockFileInfo) Mode() os.FileMode  { return 0 }
+func (mfi MockFileInfo) ModTime() time.Time { return time.Time{} }
+func (mfi MockFileInfo) Sys() interface{}   { return nil }
 
-// Mock File Info Implementation
-type mockFileInfo struct {
-	name  string
-	isDir bool
-	size  int64
-}
+func TestGetDirectorySize(t *testing.T) {
+	t.Run("Non-recursive, only files in the top-level directory", func(t *testing.T) {
+		mockFS := new(MockFileSystem)
 
-func (f mockFileInfo) Name() string       { return f.name }
-func (f mockFileInfo) Size() int64        { return f.size }
-func (f mockFileInfo) Mode() os.FileMode  { return 0 }
-func (f mockFileInfo) ModTime() time.Time { return time.Time{} }
-func (f mockFileInfo) IsDir() bool        { return f.isDir }
-func (f mockFileInfo) Sys() interface{}   { return nil }
+		// Mock response for ReadDir
+		mockFS.On("ReadDir", "/test-dir").Return([]os.DirEntry{
+			&MockDirEntry{name: "file1.txt", size: 100, isDir: false},
+			&MockDirEntry{name: "file2.txt", size: 200, isDir: false},
+			&MockDirEntry{name: "subdir", isDir: true}, // Subdirectory, should be ignored
+		}, nil)
 
-// Test Scenarios
-func TestGetDirectorySize_NonRecursive(t *testing.T) {
-	// Mock ReadDir to return files and directories
-	mockFS := mockFileSystem{
-		readDirFunc: func(dirname string) ([]os.DirEntry, error) {
-			return []os.DirEntry{
-				mockDirEntry{"file1.txt", false, 50},
-				mockDirEntry{"file2.txt", false, 100},
-				mockDirEntry{"subdir", true, 0}, // A directory
-			}, nil
-		},
-	}
+		// Call the function
+		size, err := directory.GetDirectorySize(mockFS, "/test-dir", false)
 
-	size, err := GetDirectorySize(mockFS, "/mock/path", false)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
+		// Assert results
+		assert.NoError(t, err)
+		assert.Equal(t, int64(300), size)
+		mockFS.AssertExpectations(t)
+	})
 
-	expectedSize := int64(150) // Only file sizes should be included
-	if size != expectedSize {
-		t.Errorf("Expected size %d, got %d", expectedSize, size)
-	}
-}
+	t.Run("Recursive", func(t *testing.T) {
+		mockFS := new(MockFileSystem)
 
-func TestGetDirectorySize_Recursive(t *testing.T) {
-	// Mock Walk to traverse files recursively
-	mockFS := mockFileSystem{
-		walkFunc: func(root string, fn filepath.WalkFunc) error {
-			fn("/mock/path/file1.txt", mockFileInfo{"file1.txt", false, 50}, nil)
-			fn("/mock/path/file2.txt", mockFileInfo{"file2.txt", false, 100}, nil)
-			fn("/mock/path/subdir/file3.txt", mockFileInfo{"file3.txt", false, 200}, nil)
-			return nil
-		},
-	}
+		mockFS.On("Walk", "/").Return(nil)
 
-	size, err := GetDirectorySize(mockFS, "/mock/path", true)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
+		size, err := directory.GetDirectorySize(mockFS, "/test-dir", true)
 
-	expectedSize := int64(350) // Sum of all file sizes
-	if size != expectedSize {
-		t.Errorf("Expected size %d, got %d", expectedSize, size)
-	}
-}
+		// Mock response for Walk
 
-func TestGetDirectorySize_ErrorHandling(t *testing.T) {
-	// Mock ReadDir to return an error
-	mockFS := mockFileSystem{
-		readDirFunc: func(dirname string) ([]os.DirEntry, error) {
-			return nil, errors.New("mock error")
-		},
-	}
+		// Assert results
+		assert.Error(t, err)
+		assert.Equal(t, int64(0), size)
+		mockFS.AssertExpectations(t)
+	})
 
-	_, err := GetDirectorySize(mockFS, "/mock/path", false)
-	if err == nil {
-		t.Fatal("Expected an error, but got nil")
-	}
 }

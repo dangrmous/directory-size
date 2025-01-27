@@ -19,7 +19,7 @@ func main() {
 
 	// Check if the user provided arguments
 	if len(os.Args) < 2 {
-		log.Fatalf("Usage: %s <directory1,directory2,...>", os.Args[0])
+		log.Fatalf("Usage: %s <directory1,directory2,...> --recursive --human", os.Args[0])
 	}
 
 	for _, arg := range os.Args[1:] {
