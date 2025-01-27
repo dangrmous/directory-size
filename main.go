@@ -33,7 +33,7 @@ func main() {
 			fmt.Println("Human readable mode enabled")
 		case "--1024":
 			baseTen = false
-			fmt.Println("Base 2 mode enabled")
+			fmt.Println("JEDEC 100B.01 mode enabled")
 		}
 	}
 

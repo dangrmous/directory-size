@@ -3,7 +3,7 @@ A command-line utility to list the size of a list of directories and the cumulat
 
 ## Usage
 
-`directory-size` takes a list of directory names separated by commas, like `./directory-size "photos,documents"` and lists the sum total size of the files within the directory. Any directories that return file or directory read errors will be skipped.
+`directory-size` takes a list of directory names separated by commas, like `./directory-size "photos,documents"` and lists the sum total size of the files within the directory. Files that cannot be read will be skipped.
 
 _Note_ By default, `directory-size` consider 1KB to be 1000 bytes. To use 1024 bytes for 1KB, pass in the argument --1024
 
