@@ -5,7 +5,7 @@ A command-line utility to list the size of a list of directories and the cumulat
 
 `directory-size` takes a list of directory names separated by commas, like `./directory-size "photos,documents"` and lists the sum total size of the files within the directory. Files that cannot be read will be skipped.
 
-_Note_ By default, `directory-size` consider 1KB to be 1000 bytes. To use 1024 bytes for 1KB, pass in the argument --1024
+By default, `directory-size` considers 1KB to be 1000 bytes. To use 1024 bytes for 1KB, pass in the argument --1024
 
 Build the cli:
 `go build`
