@@ -14,6 +14,7 @@ func main() {
 
 	isRecursive := false
 	isHuman := false
+	baseTen := true
 
 	osf := osfilesystem.OSFileSystem{}
 
@@ -30,6 +31,9 @@ func main() {
 		case "--human":
 			isHuman = true
 			fmt.Println("Human readable mode enabled")
+		case "--1024":
+			baseTen = false
+			fmt.Println("Base 2 mode enabled")
 		}
 	}
 
@@ -58,7 +62,7 @@ func main() {
 
 		// Print the size of the directory
 		if isHuman {
-			fmt.Printf("The size of '%s' is %s\n", dir, format.ToHumanReadable(dirSize))
+			fmt.Printf("The size of '%s' is %s\n", dir, format.ToHumanReadable(dirSize, baseTen))
 		} else {
 			fmt.Printf("The size of '%s' is %d bytes\n", dir, dirSize)
 		}
